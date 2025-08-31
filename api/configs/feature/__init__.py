@@ -871,6 +871,10 @@ class CeleryScheduleTasksConfig(BaseSettings):
         description="Enable check upgradable plugin task",
         default=True,
     )
+    ENABLE_LDAP_SYNC_TASK: bool = Field(
+        description="Enable LDAP user synchronization task",
+        default=False,
+    )
 
 
 class PositionConfig(BaseSettings):

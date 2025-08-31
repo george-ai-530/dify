@@ -337,3 +337,51 @@ class TenantPluginAutoUpgradeStrategy(Base):
     include_plugins: Mapped[list[str]] = mapped_column(sa.ARRAY(String(255)), nullable=False)  # plugin_id (author/name)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())
+
+
+class LdapConfig(Base):
+    """LDAP 配置模型"""
+    __tablename__ = "ldap_configs"
+    __table_args__ = (
+        sa.PrimaryKeyConstraint("id", name="ldap_config_pkey"),
+        sa.UniqueConstraint("tenant_id", name="unique_tenant_ldap_config"),
+    )
+
+    id: Mapped[str] = mapped_column(StringUUID, server_default=sa.text("uuid_generate_v4()"))
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    enabled: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.text("false"), nullable=False)
+    server_url: Mapped[str] = mapped_column(String(512), nullable=False)
+    bind_dn: Mapped[str] = mapped_column(String(512), nullable=False)
+    bind_password: Mapped[str] = mapped_column(String(512), nullable=False)
+    base_dn: Mapped[str] = mapped_column(String(512), nullable=False)
+    user_filter: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    user_id_attribute: Mapped[str] = mapped_column(String(64), server_default=sa.text("'uid'"), nullable=False)
+    user_email_attribute: Mapped[str] = mapped_column(String(64), server_default=sa.text("'mail'"), nullable=False)
+    user_name_attribute: Mapped[str] = mapped_column(String(64), server_default=sa.text("'cn'"), nullable=False)
+    sync_interval: Mapped[int] = mapped_column(sa.Integer, server_default=sa.text("30"), nullable=False)  # 同步间隔（秒）
+    last_sync_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())
+
+
+class LdapUser(Base):
+    """LDAP 用户模型"""
+    __tablename__ = "ldap_users"
+    __table_args__ = (
+        sa.PrimaryKeyConstraint("id", name="ldap_user_pkey"),
+        sa.UniqueConstraint("tenant_id", "ldap_uid", name="unique_tenant_ldap_user"),
+        sa.Index("ldap_user_account_id_idx", "account_id"),
+        sa.Index("ldap_user_tenant_id_idx", "tenant_id"),
+    )
+
+    id: Mapped[str] = mapped_column(StringUUID, server_default=sa.text("uuid_generate_v4()"))
+    tenant_id: Mapped[str] = mapped_column(StringUUID, nullable=False)
+    account_id: Mapped[Optional[str]] = mapped_column(StringUUID, nullable=True)  # 关联的本地账户ID
+    ldap_uid: Mapped[str] = mapped_column(String(255), nullable=False)  # LDAP 用户唯一标识
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    ldap_dn: Mapped[str] = mapped_column(String(512), nullable=False)  # LDAP Distinguished Name
+    enabled: Mapped[bool] = mapped_column(sa.Boolean, server_default=sa.text("true"), nullable=False)  # 是否启用
+    last_sync_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.current_timestamp())

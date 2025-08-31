@@ -158,6 +158,12 @@ def init_app(app: DifyApp) -> Celery:
             "task": "schedule.clean_workflow_runlogs_precise.clean_workflow_runlogs_precise",
             "schedule": crontab(minute="0", hour="2"),
         }
+    if dify_config.ENABLE_LDAP_SYNC_TASK:
+        imports.append("tasks.ldap_sync_task")
+        beat_schedule["ldap_sync_task"] = {
+            "task": "tasks.ldap_sync_task.sync_ldap_users_task",
+            "schedule": timedelta(seconds=30),  # 每30秒执行一次
+        }
     celery_app.conf.update(beat_schedule=beat_schedule, imports=imports)
 
     return celery_app

@@ -33,6 +33,7 @@ dependencies = [
     "jieba==0.42.1",
     "json-repair>=0.41.1",
     "langfuse~=2.51.3",
+    "ldap3~=2.9.1",
     "langsmith~=0.1.77",
     "mailchimp-transactional~=1.0.50",
     "markdown~=3.5.1",

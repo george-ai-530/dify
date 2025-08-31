@@ -74,7 +74,36 @@ class LoginApi(Resource):
                     raise InvalidEmailError()
                 account = AccountService.authenticate(args["email"], args["password"], args["invite_token"])
             else:
-                account = AccountService.authenticate(args["email"], args["password"])
+                # 先尝试传统认证
+                try:
+                    account = AccountService.authenticate(args["email"], args["password"])
+                except services.errors.account.AccountPasswordError:
+                    # 传统认证失败，尝试 LDAP 认证
+                    from services.ldap_service import LdapService, LdapServiceError
+                    try:
+                        # 获取所有的租户并尝试 LDAP 认证
+                        from extensions.ext_database import db
+                        from models.account import Tenant
+                        tenants = db.session.query(Tenant).all()
+                        
+                        account = None
+                        for tenant in tenants:
+                            try:
+                                account = LdapService.authenticate_ldap_user(
+                                    tenant.id, args["email"], args["password"]
+                                )
+                                if account:
+                                    break
+                            except LdapServiceError:
+                                continue
+                        
+                        if not account:
+                            # LDAP 认证也失败，抛出原始错误
+                            raise services.errors.account.AccountPasswordError()
+                            
+                    except ImportError:
+                        # LDAP 服务不可用，抛出原始错误
+                        raise services.errors.account.AccountPasswordError()
         except services.errors.account.AccountLoginError:
             raise AccountBannedError()
         except services.errors.account.AccountPasswordError:

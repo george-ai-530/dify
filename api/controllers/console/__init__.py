@@ -174,6 +174,7 @@ from .workspace import (
     account,
     agent_providers,
     endpoint,
+    ldap,
     load_balancing_config,
     members,
     model_providers,
